@@ -107,6 +107,10 @@ function App() {
     return matchedProducts;
   }, [debouncedSearch, category, sortOrder]);
 
+  useEffect(() => {
+    document.title = `Pixel Mart (${filteredProducts.length} results)`;
+  }, [filteredProducts.length]);
+
   const filterKey = filteredProducts.map((product) => product.id).join(',');
 
   useEffect(() => {
@@ -617,6 +621,21 @@ function App() {
         <section className="aisle__shelf aisle__shelf--right" aria-label="Right Aisle">
           {rightShelf.map(renderShelfCard)}
         </section>
+
+        {filteredProducts.length === 0 && displayedItems.length === 0 ? (
+          <div className="aisle__empty" role="status">
+            <p className="aisle__empty-text">
+              No products found. Try a different keyword or category.
+            </p>
+            <button
+              type="button"
+              className="aisle__empty-btn"
+              onClick={handleClearFilters}
+            >
+              Clear Filters
+            </button>
+          </div>
+        ) : null}
       </main>
 
       <div className="fly-layer" aria-hidden="true">

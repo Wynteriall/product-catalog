@@ -135,6 +135,56 @@ body {
   animation: shelf-enter-right 240ms ease-out var(--stagger-delay, 0ms) both;
 }
 
+.aisle__empty {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 100%;
+  max-width: 440px;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  background-color: var(--surface);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.aisle__empty-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.aisle__empty-btn {
+  padding: 0.5rem 0.9rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--surface);
+  background-color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--accent);
+  cursor: pointer;
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease,
+    background-color 120ms ease;
+}
+
+.aisle__empty-btn:hover {
+  background-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+
+.aisle__empty-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
 /* Sticky center cart lane */
 .aisle__center {
   position: sticky;
