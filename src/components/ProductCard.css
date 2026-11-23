@@ -1,0 +1,199 @@
+.product-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  background-color: #fffdf8;
+  border: 3px solid #1f1f1f;
+  box-shadow: 5px 5px 0 #1f1f1f;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+.product-card:hover {
+  box-shadow: 7px 7px 0 #1f1f1f;
+}
+
+.product-card--out-of-stock {
+  background-color: #ebe6da;
+  opacity: 0.62;
+  filter: grayscale(80%);
+  box-shadow: 3px 3px 0 #57534e;
+}
+
+.product-card--out-of-stock:hover {
+  box-shadow: 3px 3px 0 #57534e;
+}
+
+.product-card__badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  z-index: 2;
+}
+
+.product-card__badge > span {
+  display: inline-block;
+  padding: 0.2rem 0.45rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #fffdf8;
+  background-color: #d9534f;
+  border: 2px solid #1f1f1f;
+  box-shadow: 2px 2px 0 #1f1f1f;
+}
+
+.product-card__media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 120px;
+  background-color: #f6f3eb;
+  border: 2px solid #1f1f1f;
+  overflow: hidden;
+}
+
+.product-card__sprite {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.product-card__fallback {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(45deg, #ece6d8 25%, transparent 25%),
+    linear-gradient(-45deg, #ece6d8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ece6d8 75%),
+    linear-gradient(-45deg, transparent 75%, #ece6d8 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+}
+
+.product-card__media--fallback .product-card__fallback {
+  display: flex;
+}
+
+.product-card__fallback-icon {
+  width: 44px;
+  height: 44px;
+  image-rendering: pixelated;
+}
+
+.product-card__fallback-text {
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.6rem;
+  color: #57534e;
+  background-color: #fffdf8;
+  padding: 0.1rem 0.35rem;
+  border: 2px solid #1f1f1f;
+}
+
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.product-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.product-card__category {
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  padding: 0.15rem 0.35rem;
+  background-color: #f6f3eb;
+  border: 2px solid #1f1f1f;
+  color: #1f1f1f;
+}
+
+.product-card__stock {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.product-card__stock--in {
+  color: #2f5e41;
+}
+
+.product-card__stock--out {
+  color: #6b6761;
+}
+
+.product-card__title {
+  margin: 0.1rem 0 0;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  color: #1f1f1f;
+}
+
+.product-card__price {
+  margin: 0;
+  font-family: 'Space Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.product-card__button {
+  margin-top: auto;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: #fffdf8;
+  background-color: #1f1f1f;
+  border: 2px solid #1f1f1f;
+  box-shadow: 3px 3px 0 #d9534f;
+  cursor: pointer;
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease,
+    background-color 120ms ease;
+}
+
+.product-card__button:hover:not(:disabled) {
+  background-color: #d9534f;
+  box-shadow: 3px 3px 0 #1f1f1f;
+  transform: translate(-1px, -1px);
+}
+
+.product-card__button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #1f1f1f;
+}
+
+.product-card__button:disabled {
+  background-color: #9c9890;
+  color: #ece8df;
+  border-color: #57534e;
+  box-shadow: none;
+  cursor: not-allowed;
+}
