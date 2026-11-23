@@ -10,7 +10,6 @@ const BADGE_BY_ID = {
   5: <span>Sale</span>,
 };
 
-const FILTER_ANIM_MS = 260;
 const RESTOCK_OUT_MS = 200;
 const RESTOCK_IN_MS = 240;
 const RESTOCK_STAGGER_MS = 40;
@@ -19,7 +18,6 @@ function toShelfItems(list) {
   return list.map((product, index) => ({
     product,
     shelf: index % 2 === 0 ? 'left' : 'right',
-    status: 'idle',
     orderIndex: index,
   }));
 }
@@ -65,6 +63,7 @@ function App() {
   const [cartBouncing, setCartBouncing] = useState(false);
   const [cartImgFailed, setCartImgFailed] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [receiptPos, setReceiptPos] = useState({
     visible: false,
     x: 0,
@@ -72,7 +71,7 @@ function App() {
   });
   const [searchText, setSearchText] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [category, setCategory] = useState('All');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [sortOrder, setSortOrder] = useState('default');
   const [displayedItems, setDisplayedItems] = useState(() =>
     toShelfItems(products)
@@ -80,11 +79,13 @@ function App() {
   const [restockPhase, setRestockPhase] = useState('idle');
 
   const cartRef = useRef(null);
+  const cartVisualRef = useRef(null);
   const receiptRef = useRef(null);
   const nextIdRef = useRef(1);
   const activeTokenIdsRef = useRef(new Set());
   const prevSortOrderRef = useRef(sortOrder);
   const prevFilterKeyRef = useRef(products.map((p) => p.id).join(','));
+  const displayedCountRef = useRef(products.length);
   const animTimersRef = useRef([]);
 
   useEffect(() => {
@@ -103,7 +104,8 @@ function App() {
         product.title.toLowerCase().includes(normalizedQuery);
       const productCategory = product.category ?? 'General';
       const matchesCategory =
-        category === 'All' || productCategory === category;
+        selectedCategories.length === 0 ||
+        selectedCategories.includes(productCategory);
       return matchesSearch && matchesCategory;
     });
 
@@ -114,11 +116,84 @@ function App() {
       return [...matchedProducts].sort((a, b) => b.price - a.price);
     }
     return matchedProducts;
-  }, [debouncedSearch, category, sortOrder]);
+  }, [debouncedSearch, selectedCategories, sortOrder]);
 
   useEffect(() => {
     document.title = `Pixel Mart (${filteredProducts.length} results)`;
   }, [filteredProducts.length]);
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    ).matches;
+    if (prefersReducedMotion) {
+      return undefined;
+    }
+
+    let rafId = 0;
+    let settleTimerId = 0;
+    let lastScrollY = window.scrollY;
+
+    function setCartRoll(yPx, tiltDeg) {
+      const el = cartVisualRef.current;
+      if (!el) {
+        return;
+      }
+      el.style.setProperty('--cart-roll-y', `${yPx.toFixed(2)}px`);
+      el.style.setProperty('--cart-roll-tilt', `${tiltDeg.toFixed(2)}deg`);
+    }
+
+    function handleScroll() {
+      if (rafId) {
+        return;
+      }
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        const currentY = window.scrollY;
+        const delta = currentY - lastScrollY;
+        lastScrollY = currentY;
+
+        if (delta === 0) {
+          return;
+        }
+
+        const direction = delta > 0 ? 1 : -1;
+        const bobY = Math.sin(currentY * 0.06) * 2.5;
+        const wheelRock = Math.sin(currentY * 0.03) * 1.8;
+        const lean = direction * Math.min(2.4, Math.abs(delta) * 0.08);
+        setCartRoll(bobY, wheelRock + lean);
+
+        window.clearTimeout(settleTimerId);
+        settleTimerId = window.setTimeout(() => {
+          setCartRoll(0, 0);
+        }, 160);
+      });
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(settleTimerId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (confirmAction === null) {
+      return undefined;
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setConfirmAction(null);
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [confirmAction]);
 
   const filterKey = filteredProducts.map((product) => product.id).join(',');
 
@@ -136,85 +211,33 @@ function App() {
     animTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
     animTimersRef.current = [];
 
-    if (sortChanged) {
-      setRestockPhase('out');
+    function runRestockIn() {
+      setDisplayedItems(toShelfItems(filteredProducts));
+      displayedCountRef.current = filteredProducts.length;
 
-      const outTimer = window.setTimeout(() => {
-        setDisplayedItems(toShelfItems(filteredProducts));
-        setRestockPhase('in');
+      if (filteredProducts.length === 0) {
+        setRestockPhase('idle');
+        return;
+      }
 
-        const inDuration =
-          RESTOCK_IN_MS +
-          Math.max(0, filteredProducts.length - 1) * RESTOCK_STAGGER_MS +
-          40;
-        const idleTimer = window.setTimeout(() => {
-          setRestockPhase('idle');
-        }, inDuration);
-        animTimersRef.current.push(idleTimer);
-      }, RESTOCK_OUT_MS);
+      setRestockPhase('in');
 
-      animTimersRef.current.push(outTimer);
+      const inDuration =
+        RESTOCK_IN_MS +
+        Math.max(0, filteredProducts.length - 1) * RESTOCK_STAGGER_MS +
+        40;
+      const idleTimer = window.setTimeout(() => {
+        setRestockPhase('idle');
+      }, inDuration);
+      animTimersRef.current.push(idleTimer);
+    }
+
+    if (displayedCountRef.current === 0) {
+      runRestockIn();
     } else {
-      setRestockPhase('idle');
-      setDisplayedItems((prev) => {
-        const nextIds = new Set(filteredProducts.map((p) => p.id));
-        const prevMap = new Map(prev.map((item) => [item.product.id, item]));
-
-        const active = filteredProducts.map((product, index) => {
-          const nextShelf = index % 2 === 0 ? 'left' : 'right';
-          const existing = prevMap.get(product.id);
-          const stayedOnSameShelf =
-            existing &&
-            existing.status !== 'exiting' &&
-            existing.shelf === nextShelf;
-          return {
-            product,
-            shelf: nextShelf,
-            status: stayedOnSameShelf ? 'idle' : 'entering',
-            orderIndex: index,
-          };
-        });
-
-        const activeById = new Map(
-          active.map((item) => [item.product.id, item])
-        );
-        const merged = [];
-        const insertedIds = new Set();
-
-        prev.forEach((prevItem) => {
-          const id = prevItem.product.id;
-          if (!nextIds.has(id)) {
-            merged.push({
-              ...prevItem,
-              status: 'exiting',
-            });
-          } else if (!insertedIds.has(id)) {
-            merged.push(activeById.get(id));
-            insertedIds.add(id);
-          }
-        });
-
-        active.forEach((item) => {
-          if (!insertedIds.has(item.product.id)) {
-            merged.push(item);
-            insertedIds.add(item.product.id);
-          }
-        });
-
-        return merged;
-      });
-
-      const cleanupTimer = window.setTimeout(() => {
-        setDisplayedItems((prev) =>
-          prev
-            .filter((item) => item.status !== 'exiting')
-            .map((item) =>
-              item.status === 'entering' ? { ...item, status: 'idle' } : item
-            )
-        );
-      }, FILTER_ANIM_MS);
-
-      animTimersRef.current.push(cleanupTimer);
+      setRestockPhase('out');
+      const outTimer = window.setTimeout(runRestockIn, RESTOCK_OUT_MS);
+      animTimersRef.current.push(outTimer);
     }
 
     return () => {
@@ -346,6 +369,8 @@ function App() {
       const next = !prev;
       if (next) {
         setReceiptPos((pos) => ({ ...pos, visible: false }));
+      } else {
+        setConfirmAction(null);
       }
       return next;
     });
@@ -401,28 +426,59 @@ function App() {
 
     setCartItems([]);
     setLastAdded('');
+    setConfirmAction(null);
     showToast('RECEIPT VOIDED');
+  }
+
+  function handleRequestBuy() {
+    if (cartItems.length > 0) {
+      setConfirmAction('buy');
+    }
+  }
+
+  function handleRequestVoidAll() {
+    if (cartItems.length > 0) {
+      setConfirmAction('void-all');
+    }
+  }
+
+  function handleConfirmBuy() {
+    if (cartItems.length === 0) {
+      return;
+    }
+
+    const purchasedCount = totalCount;
+    setCartItems([]);
+    setLastAdded('');
+    setConfirmAction(null);
+    setIsReceiptOpen(false);
+    triggerCartBounce();
+    showToast(
+      `BOUGHT ${purchasedCount} ${purchasedCount === 1 ? 'ITEM' : 'ITEMS'}!`
+    );
+  }
+
+  function handleToggleCategory(cat) {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((item) => item !== cat) : [...prev, cat]
+    );
   }
 
   function handleClearFilters() {
     setSearchText('');
     setDebouncedSearch('');
-    setCategory('All');
+    setSelectedCategories([]);
     setSortOrder('default');
   }
 
   function renderShelfCard(entry) {
-    const { product, status, orderIndex } = entry;
+    const { product, orderIndex } = entry;
 
     let animClass = '';
     if (restockPhase === 'out') {
       animClass = 'product-card--restock-out';
     } else if (restockPhase === 'in') {
       animClass = 'product-card--restock-in';
-    } else if (status === 'exiting') {
-      animClass = 'product-card--exiting';
-    } else if (status === 'entering') {
-      animClass = 'product-card--entering';
     }
 
     return (
@@ -507,17 +563,19 @@ function App() {
                 ))}
               </div>
 
-              {cartImgFailed ? (
-                <PixelCartSvg />
-              ) : (
-                <img
-                  src="/images/cart.png"
-                  alt="Pixel Mart shopping cart"
-                  className="cart-stage__img"
-                  onError={() => setCartImgFailed(true)}
-                  onLoad={() => setCartImgFailed(false)}
-                />
-              )}
+              <div ref={cartVisualRef} className="cart-stage__visual">
+                {cartImgFailed ? (
+                  <PixelCartSvg />
+                ) : (
+                  <img
+                    src="/images/cart.png"
+                    alt="Pixel Mart shopping cart"
+                    className="cart-stage__img"
+                    onError={() => setCartImgFailed(true)}
+                    onLoad={() => setCartImgFailed(false)}
+                  />
+                )}
+              </div>
 
               <div className="cart-stage__counter">
                 <span>CART</span>
@@ -560,6 +618,19 @@ function App() {
                     </p>
                   ) : (
                     <>
+                      <div className="receipt-tape__toolbar">
+                        <span className="receipt-tape__count">
+                          {totalCount} {totalCount === 1 ? 'ITEM' : 'ITEMS'}
+                        </span>
+                        <button
+                          type="button"
+                          className="receipt-tape__void-all"
+                          onClick={handleRequestVoidAll}
+                        >
+                          VOID ALL
+                        </button>
+                      </div>
+
                       <ul className="receipt-tape__list">
                         {cartItems.map((item) => (
                           <li key={item.id} className="receipt-tape__item">
@@ -619,10 +690,10 @@ function App() {
                         </div>
                         <button
                           type="button"
-                          className="receipt-tape__void-all"
-                          onClick={handleClearCart}
+                          className="receipt-tape__buy-btn"
+                          onClick={handleRequestBuy}
                         >
-                          VOID ALL
+                          BUY
                         </button>
                       </div>
                     </>
@@ -630,18 +701,6 @@ function App() {
                 </div>
               </aside>
             ) : null}
-
-            <SearchBar
-              searchText={searchText}
-              onSearchChange={setSearchText}
-              category={category}
-              onCategoryChange={setCategory}
-              sortOrder={sortOrder}
-              onSortOrderChange={setSortOrder}
-              onClearFilters={handleClearFilters}
-              resultCount={filteredProducts.length}
-              totalCount={products.length}
-            />
           </div>
         </section>
 
@@ -664,6 +723,19 @@ function App() {
           </div>
         ) : null}
       </main>
+
+      <SearchBar
+        searchText={searchText}
+        onSearchChange={setSearchText}
+        selectedCategories={selectedCategories}
+        onToggleCategory={handleToggleCategory}
+        onClearCategories={() => setSelectedCategories([])}
+        sortOrder={sortOrder}
+        onSortOrderChange={setSortOrder}
+        onClearFilters={handleClearFilters}
+        resultCount={filteredProducts.length}
+        totalCount={products.length}
+      />
 
       <div className="fly-layer" aria-hidden="true">
         {flyingTokens.map((token) => (
@@ -732,6 +804,76 @@ function App() {
           )}
           <p className="cart-receipt__hint">Click cart to edit</p>
         </aside>
+      ) : null}
+
+      {confirmAction !== null ? (
+        <div
+          className="confirm-backdrop"
+          onClick={() => setConfirmAction(null)}
+        >
+          <div
+            className="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-dialog-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            {confirmAction === 'buy' ? (
+              <>
+                <h2 id="confirm-dialog-title" className="confirm-dialog__title">
+                  CONFIRM PURCHASE
+                </h2>
+                <p className="confirm-dialog__text">
+                  Buy {totalCount} {totalCount === 1 ? 'item' : 'items'} for{' '}
+                  {formatPeso(subtotal)}?
+                </p>
+                <div className="confirm-dialog__actions">
+                  <button
+                    type="button"
+                    className="confirm-dialog__btn confirm-dialog__btn--cancel"
+                    onClick={() => setConfirmAction(null)}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    type="button"
+                    className="confirm-dialog__btn confirm-dialog__btn--buy"
+                    onClick={handleConfirmBuy}
+                  >
+                    CONFIRM BUY
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 id="confirm-dialog-title" className="confirm-dialog__title">
+                  VOID ALL ITEMS?
+                </h2>
+                <p className="confirm-dialog__text">
+                  Remove all {totalCount}{' '}
+                  {totalCount === 1 ? 'item' : 'items'} ({formatPeso(subtotal)})
+                  from your receipt?
+                </p>
+                <div className="confirm-dialog__actions">
+                  <button
+                    type="button"
+                    className="confirm-dialog__btn confirm-dialog__btn--cancel"
+                    onClick={() => setConfirmAction(null)}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    type="button"
+                    className="confirm-dialog__btn confirm-dialog__btn--danger"
+                    onClick={handleClearCart}
+                  >
+                    VOID ALL
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       ) : null}
     </div>
   );

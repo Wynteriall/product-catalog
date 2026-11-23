@@ -26,7 +26,7 @@ body {
 .pixel-mart {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 4rem;
+  padding: 1.5rem 1.25rem 9.5rem;
 }
 
 .mart-header {
@@ -98,25 +98,7 @@ body {
   transform: rotateY(0deg) translateY(-4px);
 }
 
-/* 3D angled shelf enter/exit and restock animations */
-.aisle__shelf--left .product-card--exiting {
-  animation: shelf-exit-left 260ms ease-in forwards;
-  pointer-events: none;
-}
-
-.aisle__shelf--right .product-card--exiting {
-  animation: shelf-exit-right 260ms ease-in forwards;
-  pointer-events: none;
-}
-
-.aisle__shelf--left .product-card--entering {
-  animation: shelf-enter-left 260ms ease-out both;
-}
-
-.aisle__shelf--right .product-card--entering {
-  animation: shelf-enter-right 260ms ease-out both;
-}
-
+/* 3D angled shelf restock animations */
 .aisle__shelf--left .product-card--restock-out {
   animation: shelf-exit-left 200ms ease-in forwards;
   pointer-events: none;
@@ -190,12 +172,10 @@ body {
 /* Sticky center cart lane */
 .aisle__center {
   position: sticky;
-  top: 0.5rem;
+  top: 0.75rem;
   z-index: 10;
-  max-height: calc(100vh - 1rem);
-  overflow-y: auto;
-  padding: 16px 6px 6px 0;
-  scrollbar-width: thin;
+  overflow: visible;
+  padding: 0;
 }
 
 .cart-lane {
@@ -203,9 +183,12 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 0.7rem;
+  max-height: calc(100vh - 1.5rem);
+  min-height: 0;
 }
 
 .cart-status {
+  flex-shrink: 0;
   width: 100%;
   padding: 0.65rem 0.85rem;
   display: flex;
@@ -228,6 +211,7 @@ body {
 
 .cart-stage {
   position: relative;
+  flex-shrink: 0;
   width: 100%;
   padding: 1.35rem 1.1rem 1rem;
   display: flex;
@@ -251,6 +235,15 @@ body {
 
 .cart-stage--bounce {
   animation: cart-bounce 340ms cubic-bezier(0.22, 1.28, 0.36, 1);
+}
+
+.cart-stage__visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(var(--cart-roll-y, 0px)) rotate(var(--cart-roll-tilt, 0deg));
+  transition: transform 140ms ease-out;
+  will-change: transform;
 }
 
 .cart-stage__img,
@@ -368,6 +361,7 @@ body {
 }
 
 .cart-receipt__divider {
+  flex-shrink: 0;
   margin: 0.5rem 0;
   border-top: 2px dashed var(--ink);
 }
@@ -410,14 +404,18 @@ body {
 
 /* Click-to-print editable thermal receipt tape */
 .receipt-tape {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-top: -0.25rem;
+  padding-bottom: 12px;
 }
 
 .receipt-tape__slot {
+  flex-shrink: 0;
   width: 92%;
   height: 10px;
   background-color: var(--ink);
@@ -426,6 +424,10 @@ body {
 
 .receipt-tape__paper {
   position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   width: 88%;
   padding: 0.8rem 0.75rem 1rem;
   background-color: var(--surface);
@@ -463,6 +465,7 @@ body {
 }
 
 .receipt-tape__top {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -520,12 +523,31 @@ body {
   box-shadow: 1px 1px 0 var(--ink);
 }
 
+.receipt-tape__toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.receipt-tape__count {
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.62rem;
+  color: var(--muted-ink);
+  letter-spacing: 0.03em;
+}
+
 .receipt-tape__list {
+  flex: 1 1 auto;
+  min-height: 0;
   list-style: none;
   margin: 0;
   padding: 0 0.2rem 0 0;
-  max-height: 280px;
+  max-height: 260px;
   overflow-y: auto;
+  scrollbar-width: thin;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -602,21 +624,50 @@ body {
 }
 
 .receipt-tape__footer {
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
 }
 
 .receipt-tape__void-all {
-  width: 100%;
-  padding: 0.45rem 0.65rem;
+  padding: 0.2rem 0.45rem;
   font-family: 'Silkscreen', monospace;
-  font-size: 0.72rem;
+  font-size: 0.6rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  color: var(--accent);
+  background-color: var(--bg-cream);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  cursor: pointer;
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.receipt-tape__void-all:hover {
+  background-color: var(--accent);
+  color: var(--surface);
+}
+
+.receipt-tape__void-all:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.receipt-tape__buy-btn {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.76rem;
   text-transform: uppercase;
   color: var(--surface);
-  background-color: var(--ink);
+  background-color: #2f5e41;
   border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--accent);
+  box-shadow: 3px 3px 0 var(--ink);
   cursor: pointer;
   transition:
     transform 100ms ease,
@@ -624,15 +675,117 @@ body {
     background-color 120ms ease;
 }
 
-.receipt-tape__void-all:hover {
-  background-color: var(--accent);
-  box-shadow: 3px 3px 0 var(--ink);
+.receipt-tape__buy-btn:hover {
+  background-color: var(--ink);
+  box-shadow: 3px 3px 0 #2f5e41;
   transform: translate(-1px, -1px);
 }
 
-.receipt-tape__void-all:active {
+.receipt-tape__buy-btn:active {
   transform: translate(2px, 2px);
   box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* Confirmation modal */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: rgba(31, 31, 31, 0.55);
+}
+
+.confirm-dialog {
+  width: min(360px, 100%);
+  padding: 1.1rem 1.15rem;
+  background-color: var(--surface);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.confirm-dialog__title {
+  margin: 0 0 0.5rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.confirm-dialog__text {
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted-ink);
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.confirm-dialog__btn {
+  padding: 0.45rem 0.75rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.7rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+  cursor: pointer;
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.confirm-dialog__btn:focus-visible {
+  outline: 3px dashed var(--accent);
+  outline-offset: 2px;
+}
+
+.confirm-dialog__btn:hover {
+  transform: translate(-1px, -1px);
+}
+
+.confirm-dialog__btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.confirm-dialog__btn--cancel {
+  color: var(--ink);
+  background-color: var(--bg-cream);
+}
+
+.confirm-dialog__btn--cancel:hover {
+  background-color: var(--ink);
+  color: var(--surface);
+}
+
+.confirm-dialog__btn--buy {
+  color: var(--surface);
+  background-color: #2f5e41;
+}
+
+.confirm-dialog__btn--buy:hover {
+  background-color: var(--ink);
+  box-shadow: 3px 3px 0 #2f5e41;
+}
+
+.confirm-dialog__btn--danger {
+  color: var(--surface);
+  background-color: var(--accent);
+}
+
+.confirm-dialog__btn--danger:hover {
+  background-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--accent);
 }
 
 /* Keyframes */
@@ -783,8 +936,7 @@ body {
     position: static;
     order: -1;
     grid-column: 1 / -1;
-    max-height: none;
-    overflow-y: visible;
+    overflow: visible;
     padding: 0;
     margin-bottom: 0.5rem;
   }
@@ -796,6 +948,7 @@ body {
 
   .cart-lane {
     max-width: 520px;
+    max-height: none;
     margin: 0 auto;
   }
 
@@ -815,16 +968,6 @@ body {
     transform: translateY(-3px);
   }
 
-  .aisle__shelf--left .product-card--exiting,
-  .aisle__shelf--right .product-card--exiting {
-    animation: shelf-exit-mobile 240ms ease-in forwards;
-  }
-
-  .aisle__shelf--left .product-card--entering,
-  .aisle__shelf--right .product-card--entering {
-    animation: shelf-enter-mobile 240ms ease-out both;
-  }
-
   .aisle__shelf--left .product-card--restock-out,
   .aisle__shelf--right .product-card--restock-out {
     animation: shelf-exit-mobile 180ms ease-in forwards;
@@ -833,5 +976,18 @@ body {
   .aisle__shelf--left .product-card--restock-in,
   .aisle__shelf--right .product-card--restock-in {
     animation: shelf-enter-mobile 220ms ease-out var(--stagger-delay, 0ms) both;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-stage__visual {
+    transform: none;
+    transition: none;
   }
 }
