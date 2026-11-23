@@ -1,4 +1,5 @@
 .product-card {
+  --card-opacity: 1;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -7,6 +8,7 @@
   background-color: #fffdf8;
   border: 3px solid #1f1f1f;
   box-shadow: 5px 5px 0 #1f1f1f;
+  opacity: var(--card-opacity);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -18,8 +20,9 @@
 }
 
 .product-card--out-of-stock {
+  --card-opacity: 0.62;
   background-color: #ebe6da;
-  opacity: 0.62;
+  opacity: var(--card-opacity);
   filter: grayscale(80%);
   box-shadow: 3px 3px 0 #57534e;
 }

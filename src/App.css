@@ -98,6 +98,43 @@ body {
   transform: rotateY(0deg) translateY(-4px);
 }
 
+/* 3D angled shelf enter/exit and restock animations */
+.aisle__shelf--left .product-card--exiting {
+  animation: shelf-exit-left 260ms ease-in forwards;
+  pointer-events: none;
+}
+
+.aisle__shelf--right .product-card--exiting {
+  animation: shelf-exit-right 260ms ease-in forwards;
+  pointer-events: none;
+}
+
+.aisle__shelf--left .product-card--entering {
+  animation: shelf-enter-left 260ms ease-out both;
+}
+
+.aisle__shelf--right .product-card--entering {
+  animation: shelf-enter-right 260ms ease-out both;
+}
+
+.aisle__shelf--left .product-card--restock-out {
+  animation: shelf-exit-left 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+.aisle__shelf--right .product-card--restock-out {
+  animation: shelf-exit-right 200ms ease-in forwards;
+  pointer-events: none;
+}
+
+.aisle__shelf--left .product-card--restock-in {
+  animation: shelf-enter-left 240ms ease-out var(--stagger-delay, 0ms) both;
+}
+
+.aisle__shelf--right .product-card--restock-in {
+  animation: shelf-enter-right 240ms ease-out var(--stagger-delay, 0ms) both;
+}
+
 /* Sticky center cart lane */
 .aisle__center {
   position: sticky;
@@ -612,6 +649,72 @@ body {
   }
 }
 
+@keyframes shelf-exit-left {
+  0% {
+    opacity: var(--card-opacity, 1);
+    transform: rotateY(10deg) translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(10deg) translateX(-56px);
+  }
+}
+
+@keyframes shelf-enter-left {
+  0% {
+    opacity: 0;
+    transform: rotateY(10deg) translateX(-56px);
+  }
+  100% {
+    opacity: var(--card-opacity, 1);
+    transform: rotateY(10deg) translateX(0);
+  }
+}
+
+@keyframes shelf-exit-right {
+  0% {
+    opacity: var(--card-opacity, 1);
+    transform: rotateY(-10deg) translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(-10deg) translateX(56px);
+  }
+}
+
+@keyframes shelf-enter-right {
+  0% {
+    opacity: 0;
+    transform: rotateY(-10deg) translateX(56px);
+  }
+  100% {
+    opacity: var(--card-opacity, 1);
+    transform: rotateY(-10deg) translateX(0);
+  }
+}
+
+@keyframes shelf-exit-mobile {
+  0% {
+    opacity: var(--card-opacity, 1);
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@keyframes shelf-enter-mobile {
+  0% {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  100% {
+    opacity: var(--card-opacity, 1);
+    transform: translateX(0);
+  }
+}
+
 /* Tablets and mobile: flat responsive layout with 3D transforms disabled */
 @media (max-width: 1023px) {
   .aisle {
@@ -640,10 +743,31 @@ body {
   .aisle__shelf--left .product-card,
   .aisle__shelf--right .product-card {
     transform: none;
+    order: var(--mobile-order, 0);
   }
 
   .aisle__shelf--left .product-card:hover,
   .aisle__shelf--right .product-card:hover {
     transform: translateY(-3px);
+  }
+
+  .aisle__shelf--left .product-card--exiting,
+  .aisle__shelf--right .product-card--exiting {
+    animation: shelf-exit-mobile 240ms ease-in forwards;
+  }
+
+  .aisle__shelf--left .product-card--entering,
+  .aisle__shelf--right .product-card--entering {
+    animation: shelf-enter-mobile 240ms ease-out both;
+  }
+
+  .aisle__shelf--left .product-card--restock-out,
+  .aisle__shelf--right .product-card--restock-out {
+    animation: shelf-exit-mobile 180ms ease-in forwards;
+  }
+
+  .aisle__shelf--left .product-card--restock-in,
+  .aisle__shelf--right .product-card--restock-in {
+    animation: shelf-enter-mobile 220ms ease-out var(--stagger-delay, 0ms) both;
   }
 }

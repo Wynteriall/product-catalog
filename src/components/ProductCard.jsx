@@ -7,6 +7,8 @@ function ProductCard({
   inStock,
   onAddToCart,
   image,
+  className = '',
+  style,
   children,
 }) {
   const formattedPrice = `₱${price.toLocaleString('en-PH', {
@@ -30,7 +32,8 @@ function ProductCard({
 
   return (
     <article
-      className={`product-card${inStock ? '' : ' product-card--out-of-stock'}`}
+      className={`product-card${inStock ? '' : ' product-card--out-of-stock'}${className ? ` ${className}` : ''}`}
+      style={style}
     >
       {children ? <div className="product-card__badge">{children}</div> : null}
 

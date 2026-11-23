@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ProductCard from './components/ProductCard';
 import SearchBar from './components/SearchBar';
 import { products } from './data/products';
@@ -59,14 +59,132 @@ function App() {
   const [searchText, setSearchText] = useState('');
   const [category, setCategory] = useState('All');
   const [sortOrder, setSortOrder] = useState('default');
+  const [displayedItems, setDisplayedItems] = useState(() =>
+    products.map((product, index) => ({
+      product,
+      shelf: index % 2 === 0 ? 'left' : 'right',
+      status: 'idle',
+      orderIndex: index,
+    }))
+  );
+  const [restockPhase, setRestockPhase] = useState('idle');
 
   const cartRef = useRef(null);
   const receiptRef = useRef(null);
   const nextIdRef = useRef(1);
   const activeTokenIdsRef = useRef(new Set());
+  const prevSortOrderRef = useRef(sortOrder);
+  const prevFilterKeyRef = useRef(products.map((p) => p.id).join(','));
+  const animTimersRef = useRef([]);
 
-  const leftShelf = products.slice(0, 4);
-  const rightShelf = products.slice(4, 8);
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = searchText.trim().toLowerCase();
+    const matchedProducts = products.filter((product) => {
+      const matchesSearch =
+        normalizedQuery === '' ||
+        product.title.toLowerCase().includes(normalizedQuery);
+      const productCategory = product.category ?? 'General';
+      const matchesCategory =
+        category === 'All' || productCategory === category;
+      return matchesSearch && matchesCategory;
+    });
+
+    if (sortOrder === 'price-asc') {
+      return [...matchedProducts].sort((a, b) => a.price - b.price);
+    }
+    if (sortOrder === 'price-desc') {
+      return [...matchedProducts].sort((a, b) => b.price - a.price);
+    }
+    return matchedProducts;
+  }, [searchText, category, sortOrder]);
+
+  const filterKey = filteredProducts.map((product) => product.id).join(',');
+
+  useEffect(() => {
+    const sortChanged = prevSortOrderRef.current !== sortOrder;
+    const filterChanged = prevFilterKeyRef.current !== filterKey;
+
+    if (!sortChanged && !filterChanged) {
+      return undefined;
+    }
+
+    prevSortOrderRef.current = sortOrder;
+    prevFilterKeyRef.current = filterKey;
+
+    animTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+    animTimersRef.current = [];
+
+    if (sortChanged) {
+      setRestockPhase('out');
+
+      const outTimer = window.setTimeout(() => {
+        setDisplayedItems(
+          filteredProducts.map((product, index) => ({
+            product,
+            shelf: index % 2 === 0 ? 'left' : 'right',
+            status: 'idle',
+            orderIndex: index,
+          }))
+        );
+        setRestockPhase('in');
+
+        const inDuration =
+          240 + Math.max(0, filteredProducts.length - 1) * 40 + 40;
+        const idleTimer = window.setTimeout(() => {
+          setRestockPhase('idle');
+        }, inDuration);
+        animTimersRef.current.push(idleTimer);
+      }, 200);
+
+      animTimersRef.current.push(outTimer);
+    } else {
+      setRestockPhase('idle');
+      setDisplayedItems((prev) => {
+        const nextIds = new Set(filteredProducts.map((p) => p.id));
+        const prevMap = new Map(prev.map((item) => [item.product.id, item]));
+
+        const active = filteredProducts.map((product, index) => {
+          const existing = prevMap.get(product.id);
+          return {
+            product,
+            shelf: index % 2 === 0 ? 'left' : 'right',
+            status:
+              existing && existing.status !== 'exiting' ? 'idle' : 'entering',
+            orderIndex: index,
+          };
+        });
+
+        const exiting = prev
+          .filter((item) => !nextIds.has(item.product.id))
+          .map((item) => ({
+            ...item,
+            status: 'exiting',
+          }));
+
+        return [...active, ...exiting];
+      });
+
+      const cleanupTimer = window.setTimeout(() => {
+        setDisplayedItems((prev) =>
+          prev
+            .filter((item) => item.status !== 'exiting')
+            .map((item) =>
+              item.status === 'entering' ? { ...item, status: 'idle' } : item
+            )
+        );
+      }, 260);
+
+      animTimersRef.current.push(cleanupTimer);
+    }
+
+    return () => {
+      animTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+      animTimersRef.current = [];
+    };
+  }, [filteredProducts, filterKey, sortOrder]);
+
+  const leftShelf = displayedItems.filter((item) => item.shelf === 'left');
+  const rightShelf = displayedItems.filter((item) => item.shelf === 'right');
 
   const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartItems.reduce(
@@ -252,7 +370,20 @@ function App() {
     setSortOrder('default');
   }
 
-  function renderShelfCard(product) {
+  function renderShelfCard(entry) {
+    const { product, status, orderIndex } = entry;
+
+    let animClass = '';
+    if (restockPhase === 'out') {
+      animClass = 'product-card--restock-out';
+    } else if (restockPhase === 'in') {
+      animClass = 'product-card--restock-in';
+    } else if (status === 'exiting') {
+      animClass = 'product-card--exiting';
+    } else if (status === 'entering') {
+      animClass = 'product-card--entering';
+    }
+
     return (
       <ProductCard
         key={product.id}
@@ -261,6 +392,11 @@ function App() {
         category={product.category}
         inStock={product.inStock}
         image={product.image}
+        className={animClass}
+        style={{
+          '--mobile-order': orderIndex,
+          '--stagger-delay': `${orderIndex * 40}ms`,
+        }}
         onAddToCart={handleAddToCart}
       >
         {BADGE_BY_ID[product.id]}
@@ -462,7 +598,7 @@ function App() {
               sortOrder={sortOrder}
               onSortOrderChange={setSortOrder}
               onClearFilters={handleClearFilters}
-              resultCount={products.length}
+              resultCount={filteredProducts.length}
               totalCount={products.length}
             />
           </div>
