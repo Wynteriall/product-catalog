@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import ProductCard from './components/ProductCard';
+import SearchBar from './components/SearchBar';
 import { products } from './data/products';
 import './App.css';
 
@@ -55,6 +56,9 @@ function App() {
     x: 0,
     y: 0,
   });
+  const [searchText, setSearchText] = useState('');
+  const [category, setCategory] = useState('All');
+  const [sortOrder, setSortOrder] = useState('default');
 
   const cartRef = useRef(null);
   const receiptRef = useRef(null);
@@ -240,6 +244,12 @@ function App() {
     setCartItems([]);
     setLastAdded('');
     showToast('RECEIPT VOIDED');
+  }
+
+  function handleClearFilters() {
+    setSearchText('');
+    setCategory('All');
+    setSortOrder('default');
   }
 
   function renderShelfCard(product) {
@@ -443,6 +453,18 @@ function App() {
                 </div>
               </aside>
             ) : null}
+
+            <SearchBar
+              searchText={searchText}
+              onSearchChange={setSearchText}
+              category={category}
+              onCategoryChange={setCategory}
+              sortOrder={sortOrder}
+              onSortOrderChange={setSortOrder}
+              onClearFilters={handleClearFilters}
+              resultCount={products.length}
+              totalCount={products.length}
+            />
           </div>
         </section>
 

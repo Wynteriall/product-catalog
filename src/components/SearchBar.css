@@ -1,0 +1,108 @@
+.search-bar {
+  width: 100%;
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  background-color: var(--surface);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.search-bar__count {
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  background-color: var(--bg-cream);
+  border: 2px solid var(--ink);
+}
+
+.search-bar__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.search-bar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.search-bar__label {
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.search-bar__input,
+.search-bar__select {
+  width: 100%;
+  padding: 0.42rem 0.55rem;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--ink);
+  background-color: var(--bg-cream);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+.search-bar__input:focus-visible,
+.search-bar__select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent);
+  background-color: var(--surface);
+}
+
+.search-bar__clear {
+  margin-top: 0.15rem;
+  width: 100%;
+  padding: 0.48rem 0.65rem;
+  font-family: 'Silkscreen', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--surface);
+  background-color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--accent);
+  cursor: pointer;
+  transition:
+    transform 100ms ease,
+    box-shadow 100ms ease,
+    background-color 120ms ease;
+}
+
+.search-bar__clear:hover {
+  background-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+
+.search-bar__clear:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+@media (max-width: 1023px) {
+  .search-bar__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .search-bar__row {
+    grid-template-columns: 1fr;
+  }
+}
