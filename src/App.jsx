@@ -10,6 +10,20 @@ const BADGE_BY_ID = {
   5: <span>Sale</span>,
 };
 
+const FILTER_ANIM_MS = 260;
+const RESTOCK_OUT_MS = 200;
+const RESTOCK_IN_MS = 240;
+const RESTOCK_STAGGER_MS = 40;
+
+function toShelfItems(list) {
+  return list.map((product, index) => ({
+    product,
+    shelf: index % 2 === 0 ? 'left' : 'right',
+    status: 'idle',
+    orderIndex: index,
+  }));
+}
+
 function formatPeso(amount) {
   return `₱${amount.toLocaleString('en-PH', {
     minimumFractionDigits: 2,
@@ -61,12 +75,7 @@ function App() {
   const [category, setCategory] = useState('All');
   const [sortOrder, setSortOrder] = useState('default');
   const [displayedItems, setDisplayedItems] = useState(() =>
-    products.map((product, index) => ({
-      product,
-      shelf: index % 2 === 0 ? 'left' : 'right',
-      status: 'idle',
-      orderIndex: index,
-    }))
+    toShelfItems(products)
   );
   const [restockPhase, setRestockPhase] = useState('idle');
 
@@ -131,23 +140,18 @@ function App() {
       setRestockPhase('out');
 
       const outTimer = window.setTimeout(() => {
-        setDisplayedItems(
-          filteredProducts.map((product, index) => ({
-            product,
-            shelf: index % 2 === 0 ? 'left' : 'right',
-            status: 'idle',
-            orderIndex: index,
-          }))
-        );
+        setDisplayedItems(toShelfItems(filteredProducts));
         setRestockPhase('in');
 
         const inDuration =
-          240 + Math.max(0, filteredProducts.length - 1) * 40 + 40;
+          RESTOCK_IN_MS +
+          Math.max(0, filteredProducts.length - 1) * RESTOCK_STAGGER_MS +
+          40;
         const idleTimer = window.setTimeout(() => {
           setRestockPhase('idle');
         }, inDuration);
         animTimersRef.current.push(idleTimer);
-      }, 200);
+      }, RESTOCK_OUT_MS);
 
       animTimersRef.current.push(outTimer);
     } else {
@@ -157,24 +161,47 @@ function App() {
         const prevMap = new Map(prev.map((item) => [item.product.id, item]));
 
         const active = filteredProducts.map((product, index) => {
+          const nextShelf = index % 2 === 0 ? 'left' : 'right';
           const existing = prevMap.get(product.id);
+          const stayedOnSameShelf =
+            existing &&
+            existing.status !== 'exiting' &&
+            existing.shelf === nextShelf;
           return {
             product,
-            shelf: index % 2 === 0 ? 'left' : 'right',
-            status:
-              existing && existing.status !== 'exiting' ? 'idle' : 'entering',
+            shelf: nextShelf,
+            status: stayedOnSameShelf ? 'idle' : 'entering',
             orderIndex: index,
           };
         });
 
-        const exiting = prev
-          .filter((item) => !nextIds.has(item.product.id))
-          .map((item) => ({
-            ...item,
-            status: 'exiting',
-          }));
+        const activeById = new Map(
+          active.map((item) => [item.product.id, item])
+        );
+        const merged = [];
+        const insertedIds = new Set();
 
-        return [...active, ...exiting];
+        prev.forEach((prevItem) => {
+          const id = prevItem.product.id;
+          if (!nextIds.has(id)) {
+            merged.push({
+              ...prevItem,
+              status: 'exiting',
+            });
+          } else if (!insertedIds.has(id)) {
+            merged.push(activeById.get(id));
+            insertedIds.add(id);
+          }
+        });
+
+        active.forEach((item) => {
+          if (!insertedIds.has(item.product.id)) {
+            merged.push(item);
+            insertedIds.add(item.product.id);
+          }
+        });
+
+        return merged;
       });
 
       const cleanupTimer = window.setTimeout(() => {
@@ -185,7 +212,7 @@ function App() {
               item.status === 'entering' ? { ...item, status: 'idle' } : item
             )
         );
-      }, 260);
+      }, FILTER_ANIM_MS);
 
       animTimersRef.current.push(cleanupTimer);
     }
