@@ -57,6 +57,7 @@ function App() {
     y: 0,
   });
   const [searchText, setSearchText] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [sortOrder, setSortOrder] = useState('default');
   const [displayedItems, setDisplayedItems] = useState(() =>
@@ -77,8 +78,16 @@ function App() {
   const prevFilterKeyRef = useRef(products.map((p) => p.id).join(','));
   const animTimersRef = useRef([]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
   const filteredProducts = useMemo(() => {
-    const normalizedQuery = searchText.trim().toLowerCase();
+    const normalizedQuery = debouncedSearch.trim().toLowerCase();
     const matchedProducts = products.filter((product) => {
       const matchesSearch =
         normalizedQuery === '' ||
@@ -96,7 +105,7 @@ function App() {
       return [...matchedProducts].sort((a, b) => b.price - a.price);
     }
     return matchedProducts;
-  }, [searchText, category, sortOrder]);
+  }, [debouncedSearch, category, sortOrder]);
 
   const filterKey = filteredProducts.map((product) => product.id).join(',');
 
@@ -366,6 +375,7 @@ function App() {
 
   function handleClearFilters() {
     setSearchText('');
+    setDebouncedSearch('');
     setCategory('All');
     setSortOrder('default');
   }
