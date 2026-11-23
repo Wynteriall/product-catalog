@@ -1,16 +1,47 @@
-# React + Vite
+# Pixel Mart (`product-catalog`)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A retro pixel-art convenience store built with React and Vite using plain JavaScript and plain CSS.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Build for production:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm run build
+```
 
-## Expanding the Oxlint configuration
+## Pixel Sprite Assets (`public/images/`)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Drop the following PNG sprites into `public/images/` (styled pixel fallback frames and an inline SVG cart display automatically when files are absent):
+
+- `cart.png`
+- `strawberry-milk.png`
+- `cup-noodles.png`
+- `iced-coffee.png`
+- `tuna-onigiri.png`
+- `matcha-soda.png`
+- `salted-chips.png`
+- `mystery-bento.png`
+- `pocket-umbrella.png`
+
+## Guide Questions
+
+1. **What is the difference between props and state?**
+   **Props** are inputs passed into a component from its parent to configure what it renders, while **state** is data owned and managed inside a component that changes over time and triggers re-renders when updated.
+
+2. **Why can a child component not modify the props it receives?**
+   React enforces one-way (top-down) data flow and treats props as read-only so data ownership stays predictable and components remain easy to reason about and debug.
+
+3. **How does the `onAddToCart` callback allow data to flow from child to parent even though props only flow downward?**
+   The parent (`App.jsx`) passes a function reference down as a prop (`onAddToCart`). When the child (`ProductCard.jsx`) invokes that function with its `title` and click `event`, the function executes in the parent's scope and updates the parent's state.
+
+4. **Why is the `key` prop required when rendering a list with `.map()`? What could happen if it is missing or duplicated?**
+   `key` lets React match each element across renders so it knows which items were added, moved, or removed. If keys are missing or duplicated, React can reuse the wrong DOM nodes or component state, causing visual glitches or lost updates.
+
+5. **What does the `children` prop allow you to do that a normal prop does not?**
+   `children` lets a parent pass arbitrary JSX directly between a component's opening and closing tags (such as custom corner badges like `<span>New</span>` or `<span>Sale</span>`), making the component a flexible wrapper/slot without hardcoding every possible markup variation.
