@@ -49,6 +49,7 @@ function App() {
   const [flyingTokens, setFlyingTokens] = useState([]);
   const [cartBouncing, setCartBouncing] = useState(false);
   const [cartImgFailed, setCartImgFailed] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [receiptPos, setReceiptPos] = useState({
     visible: false,
     x: 0,
@@ -78,6 +79,12 @@ function App() {
 
   function removeToast(id) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }
+
+  function showToast(text) {
+    const toastId = nextIdRef.current++;
+    setToasts((prev) => [...prev, { id: toastId, text }]);
+    window.setTimeout(() => removeToast(toastId), 1100);
   }
 
   function finishFlyingToken(id) {
@@ -116,10 +123,7 @@ function App() {
     });
 
     setLastAdded(title);
-
-    const toastId = nextIdRef.current++;
-    setToasts((prev) => [...prev, { id: toastId, text: `+1 ${title}` }]);
-    window.setTimeout(() => removeToast(toastId), 1100);
+    showToast(`+1 ${title}`);
 
     const buttonRect = event?.currentTarget?.getBoundingClientRect();
     const cartRect = cartRef.current?.getBoundingClientRect();
@@ -151,6 +155,10 @@ function App() {
   }
 
   function handleCartMouseMove(event) {
+    if (isReceiptOpen) {
+      return;
+    }
+
     const tooltipWidth = receiptRef.current?.offsetWidth || 260;
     const tooltipHeight = receiptRef.current?.offsetHeight || 180;
     const offset = 16;
@@ -169,6 +177,69 @@ function App() {
 
   function handleCartMouseLeave() {
     setReceiptPos((prev) => ({ ...prev, visible: false }));
+  }
+
+  function handleToggleReceipt() {
+    setIsReceiptOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setReceiptPos((pos) => ({ ...pos, visible: false }));
+      }
+      return next;
+    });
+  }
+
+  function handleCartStageKeyDown(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleToggleReceipt();
+    }
+  }
+
+  function handleRemoveItem(id) {
+    const item = cartItems.find((entry) => entry.id === id);
+    if (!item) {
+      return;
+    }
+
+    const remaining = cartItems.filter((entry) => entry.id !== id);
+    setCartItems(remaining);
+    if (lastAdded === item.title) {
+      setLastAdded(
+        remaining.length > 0 ? remaining[remaining.length - 1].title : ''
+      );
+    }
+    showToast(`VOID ${item.title}`);
+  }
+
+  function handleUpdateQuantity(id, delta) {
+    const item = cartItems.find((entry) => entry.id === id);
+    if (!item) {
+      return;
+    }
+
+    const nextQty = item.quantity + delta;
+    if (nextQty <= 0) {
+      handleRemoveItem(id);
+      return;
+    }
+
+    setCartItems((prev) =>
+      prev.map((entry) =>
+        entry.id === id ? { ...entry, quantity: nextQty } : entry
+      )
+    );
+    showToast(`${delta > 0 ? '+1' : '-1'} ${item.title}`);
+  }
+
+  function handleClearCart() {
+    if (cartItems.length === 0) {
+      return;
+    }
+
+    setCartItems([]);
+    setLastAdded('');
+    showToast('RECEIPT VOIDED');
   }
 
   function renderShelfCard(product) {
@@ -207,14 +278,31 @@ function App() {
         <section className="aisle__center" aria-label="Shopping Cart">
           <div className="cart-lane">
             <div className="cart-status" role="status" aria-live="polite">
-              {totalCount === 0
-                ? 'Your cart is empty...'
-                : `Items added to cart: ${totalCount} (Last added: ${lastAdded})`}
+              {totalCount === 0 ? (
+                'Your cart is empty...'
+              ) : lastAdded ? (
+                <>
+                  <span className="cart-status__count">
+                    Items added to cart: {totalCount}
+                  </span>
+                  <span className="cart-status__last">
+                    Last added: {lastAdded}
+                  </span>
+                </>
+              ) : (
+                `Items in cart: ${totalCount}`
+              )}
             </div>
 
             <div
               ref={cartRef}
-              className={`cart-stage${cartBouncing ? ' cart-stage--bounce' : ''}`}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isReceiptOpen}
+              aria-controls="printed-receipt"
+              className={`cart-stage${cartBouncing ? ' cart-stage--bounce' : ''}${isReceiptOpen ? ' cart-stage--open' : ''}`}
+              onClick={handleToggleReceipt}
+              onKeyDown={handleCartStageKeyDown}
               onAnimationEnd={() => setCartBouncing(false)}
               onMouseEnter={handleCartMouseMove}
               onMouseMove={handleCartMouseMove}
@@ -248,8 +336,113 @@ function App() {
                 <span>CART</span>
                 <strong>{totalCount}</strong>
               </div>
-              <p className="cart-stage__hint">Hover cart for pixel receipt</p>
+              <p className="cart-stage__hint">
+                {isReceiptOpen
+                  ? 'Click cart to close receipt'
+                  : 'Hover to peek · Click to edit'}
+              </p>
             </div>
+
+            {isReceiptOpen ? (
+              <aside
+                id="printed-receipt"
+                className="receipt-tape"
+                aria-label="Editable cart receipt"
+              >
+                <div className="receipt-tape__slot" aria-hidden="true" />
+                <div className="receipt-tape__paper">
+                  <div className="receipt-tape__top">
+                    <span className="receipt-tape__title">
+                      PIXEL MART RECEIPT
+                    </span>
+                    <button
+                      type="button"
+                      className="receipt-tape__close"
+                      onClick={handleToggleReceipt}
+                      aria-label="Close receipt"
+                    >
+                      X
+                    </button>
+                  </div>
+
+                  <div className="cart-receipt__divider" />
+
+                  {cartItems.length === 0 ? (
+                    <p className="cart-receipt__empty">
+                      No items yet. Pick from the aisles!
+                    </p>
+                  ) : (
+                    <>
+                      <ul className="receipt-tape__list">
+                        {cartItems.map((item) => (
+                          <li key={item.id} className="receipt-tape__item">
+                            <div className="receipt-tape__item-top">
+                              <span className="receipt-tape__item-name">
+                                {item.title}
+                              </span>
+                              <span className="receipt-tape__item-price">
+                                {formatPeso(item.price * item.quantity)}
+                              </span>
+                            </div>
+                            <div className="receipt-tape__controls">
+                              <div className="receipt-tape__stepper">
+                                <button
+                                  type="button"
+                                  className="receipt-tape__step-btn"
+                                  aria-label={`Decrease ${item.title} quantity`}
+                                  onClick={() =>
+                                    handleUpdateQuantity(item.id, -1)
+                                  }
+                                >
+                                  -
+                                </button>
+                                <span className="receipt-tape__qty">
+                                  x{item.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="receipt-tape__step-btn"
+                                  aria-label={`Increase ${item.title} quantity`}
+                                  onClick={() =>
+                                    handleUpdateQuantity(item.id, 1)
+                                  }
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                className="receipt-tape__void-btn"
+                                aria-label={`Remove ${item.title} from receipt`}
+                                onClick={() => handleRemoveItem(item.id)}
+                              >
+                                VOID
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <div className="cart-receipt__divider" />
+
+                      <div className="receipt-tape__footer">
+                        <div className="cart-receipt__total">
+                          <span>SUBTOTAL</span>
+                          <strong>{formatPeso(subtotal)}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          className="receipt-tape__void-all"
+                          onClick={handleClearCart}
+                        >
+                          VOID ALL
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </aside>
+            ) : null}
           </div>
         </section>
 
@@ -290,7 +483,7 @@ function App() {
         ))}
       </div>
 
-      {receiptPos.visible ? (
+      {!isReceiptOpen && receiptPos.visible ? (
         <aside
           ref={receiptRef}
           className="cart-receipt"
@@ -323,6 +516,7 @@ function App() {
               </div>
             </>
           )}
+          <p className="cart-receipt__hint">Click cart to edit</p>
         </aside>
       ) : null}
     </div>
