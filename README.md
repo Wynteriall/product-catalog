@@ -15,20 +15,6 @@ Build for production:
 npm run build
 ```
 
-## Pixel Sprite Assets (`public/images/`)
-
-Drop the following PNG sprites into `public/images/` (styled pixel fallback frames and an inline SVG cart display automatically when files are absent):
-
-- `cart.png`
-- `strawberry-milk.png`
-- `cup-noodles.png`
-- `iced-coffee.png`
-- `tuna-onigiri.png`
-- `matcha-soda.png`
-- `salted-chips.png`
-- `mystery-bento.png`
-- `pocket-umbrella.png`
-
 ## Guide Questions
 
 1. **What is the difference between props and state?**
