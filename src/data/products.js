@@ -1,0 +1,67 @@
+export const products = [
+  {
+    id: 1,
+    title: "Strawberry Milk",
+    price: 65,
+    category: "Drinks",
+    inStock: true,
+    image: "/images/strawberry-milk.png",
+  },
+  {
+    id: 2,
+    title: "Cup Noodles",
+    price: 45,
+    category: "Snacks",
+    inStock: true,
+    image: "/images/cup-noodles.png",
+  },
+  {
+    id: 3,
+    title: "Iced Coffee",
+    price: 89,
+    category: "Drinks",
+    inStock: true,
+    image: "/images/iced-coffee.png",
+  },
+  {
+    id: 4,
+    title: "Tuna Onigiri",
+    price: 55,
+    category: "Ready-to-Eat",
+    inStock: false,
+    image: "/images/tuna-onigiri.png",
+  },
+  {
+    id: 5,
+    title: "Matcha Soda",
+    price: 75,
+    category: "Drinks",
+    inStock: true,
+    image: "/images/matcha-soda.png",
+  },
+  {
+    id: 6,
+    title: "Salted Chips",
+    price: 49,
+    category: "Snacks",
+    inStock: true,
+    image: "/images/salted-chips.png",
+  },
+  {
+    id: 7,
+    title: "Mystery Bento",
+    price: 145,
+    inStock: true,
+    image: "/images/mystery-bento.png",
+  },
+  {
+    id: 8,
+    title: "Pocket Umbrella",
+    price: 299,
+    category: "Essentials",
+    inStock: false,
+    image: "/images/pocket-umbrella.png",
+  },
+];
+
+export default products;
